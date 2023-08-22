@@ -21,7 +21,7 @@
 ['Pontuacao', '.']
 ['Identificador', 'ComputeFac']
 ['Pontuacao', '(']
-['ERRO LEXICO', '1qq']
+['Identificador', 'numero']
 ['Pontuacao', ')']
 ['Pontuacao', ')']
 ['Pontuacao', ';']
@@ -72,4 +72,3 @@
 ['Pontuacao', ';']
 ['Pontuacao', '}']
 ['Pontuacao', '}']
-['ERRO LEXICO', '/']
