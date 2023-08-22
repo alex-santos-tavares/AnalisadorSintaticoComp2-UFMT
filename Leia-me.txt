@@ -1,0 +1,2 @@
+Abrir arquivo "a.exe" e entrar com o nome do arquivo de entrada a ser analisado.
+nome do arquivo teste na pasta "teste.txt", e sera gerado um arquivo "saida.txt" com os Tokens.
