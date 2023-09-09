@@ -113,21 +113,10 @@ def match(expected_token):
     if tokens and tokens[0] == expected_token:
         cont = cont + 1 
         tokens = tokens[1:]
-
-# # caso um token errado seja encontrado apos todos os anteriores serem aprovados ele informa que existem tokens a mais
-# def goal():
-#     expr()
-#     if tokens:
-#         print("Erro de sintaxe: fechamento indevido de parenteses e(ou) tokens adicionais após a análise sintática")
-#         exit()
-
-# Declaração
-def stmt():
-    type_specifier()
-    match('id')
-    match('=')
-    expr()
-    match(';')
+    else:
+        print(f"Erro de sintaxe! esperava '{expected_token }' posicao: {cont} e teve {lookahead()}")
+        print(tokens)
+        exit()
 
 # Especificador de Tipo
 def type_specifier():
@@ -137,59 +126,6 @@ def type_specifier():
         print(f"Erro de sintaxe: esperava 'int' ou 'boolean', encontrou '{lookahead()}'")
         exit()
 
-# expressão
-def expr():
-    term()
-    expr_prime()
-
-
-# adicao | subtracao
-def expr_prime():
-    if lookahead() in ['+', '-']:
-        parse_op()
-        term()
-        expr_prime()
-  
-# termo
-def term():
-    factor()
-    term_prime()
-
-# mult | div
-def term_prime():
-    if lookahead() in ['*']:
-        parse_op()
-        factor()
-        term_prime()
-
-# contem parenteses, numero e identificador. Já filtra caso exista um fechamento de parentes indevido ou a falta de um fator
-def factor():
-    if lookahead() == ')':
-        print("Erro de sintaxe: fechamente de parenteses indevido")
-        exit()
-    if lookahead() == '(':
-        match('(')
-        expr()
-        match(')')
-    elif lookahead() == 'numInt':
-        match('num')
-    elif lookahead() == 'id':
-        match('id')
-    else:
-        print("Erro de sintaxe: esperava um fator")
-        exit()
-
-# similar a anterior só que com os operadores aditivos e multiplicativos/divisivos. Caso não exista ele retorna que era esperado um operador
-def parse_op():
-    if lookahead() == '+':
-        match('+')
-    elif lookahead() == '-':
-        match('-')
-    elif lookahead() == '*':
-        match('*')
-    else:
-        print("Erro de sintaxe: esperava um operador")
-        exit()
 
 # isInstanciaDeClasse -> id
 #                    | this
@@ -198,40 +134,44 @@ def parse_op():
 #                    | isInstanciaDeClasse '.' id
 #                    | isInstanciaDeClasse '.' id '(' [ EXPS ']')
 def is_instancia_de_classe():
-    if lookahead() == 'id':
+    if lookahead() == 'new':
+        match('new')
+        if lookahead() == 'int':
+            is_atribuicao()
+        else:
+            match('id')
+            match('(')
+            match(')')
+    elif lookahead() == 'id':
         match('id')
+        if lookahead() == '(':
+            is_instancia_de_classe()
     elif lookahead() == 'this':
         match('this')
-    elif lookahead() == 'new':
-        match('new')
-        match('id')
-        match('(')
-        match(')')
     elif lookahead() == '(':
         match('(')
         exp()
         match(')')
-    else:
-        is_instancia_de_classe()
+    if lookahead() == '.':
         match('.')
-        match('id')
-        if lookahead() == '(':
-            match('(')
-            if lookahead() != ')':
-                exps()
-            match(')')
+        if lookahead() == 'id':
+            match('id')
+            is_instancia_de_classe()
+
             
 # EXPS -> EXP { , EXP }
 def exps():
     exp()
-    while lookahead() == ',':
-        match(',')
-        exp()
+    if lookahead(','):
+        while lookahead() == ',':
+            match(',')
+            exp()
+    
 
 def is_multiplicacao():
     is_atribuicao()
     while lookahead() in ['*']:
-        parse_op()
+        match('*')
         is_atribuicao()
 
 # isAtribuicao -> ! isAtribuicao
@@ -245,7 +185,16 @@ def is_multiplicacao():
 #             | isInstanciaDeClasse '[' EXP ']'
 #             | isInstanciaDeClasse
 def is_atribuicao():
-    if lookahead() == '!':
+    if lookahead() == 'new':
+        match('new')
+        if lookahead() == 'int':
+            match('int')
+            match('[')
+            exp()
+            match(']')
+        elif lookahead() == 'id':
+            is_instancia_de_classe()
+    elif lookahead() == '!':
         match('!')
         is_atribuicao()
     elif lookahead() == '-':
@@ -253,26 +202,14 @@ def is_atribuicao():
         is_atribuicao()
     elif lookahead() in ['true', 'false', 'num', 'null']:
         match(lookahead())
-    elif lookahead() == 'new':
-        match('new')
-        match('int')
-        match('[')
-        exp()
-        match(']')
     else:
         is_instancia_de_classe()
-        if lookahead() == '.':
-            match('.')
-            if lookahead() == 'length':
-                match('length')
-            elif lookahead() == '[':
+        if lookahead() == 'length':
+            match('length')
+        elif lookahead() == '[':
                 match('[')
                 exp()
                 match(']')
-        elif lookahead() == '[':
-            match('[')
-            exp()
-            match(']')
 
 # EXP -> EXP && isSubtracao
 #     | isSubtracao
@@ -281,9 +218,6 @@ def exp():
     if lookahead() == '&&':
         match('&&')
         exp()
-    else:
-        print(f"Erro de sintaxe: expressão inválida: '{lookahead()}'")
-        exit()
 
 # isSubtracao -> isSubtracao < isAdicao
 #            | isSubtracao == isAdicao
@@ -292,7 +226,7 @@ def exp():
 def is_subtracao():
     is_adicao()
     while lookahead() in ['<', '==', '!=']:
-        parse_op()
+        match(lookahead())
         is_adicao()
 
 # isAdicao -> isAdicao + isMultiplicacao
@@ -301,7 +235,7 @@ def is_subtracao():
 def is_adicao():
     is_multiplicacao()
     while lookahead() in ['+', '-']:
-        parse_op()
+        match(lookahead())
         is_multiplicacao()
 
 # CMD -> '{' { CMD } '}'
@@ -367,11 +301,12 @@ def is_declaracao_metodo():
     tipo()
     match('id')
     match('(')
-    if lookahead() in ['int', 'boolean']:
-        is_parametro()
+    match('[')
+    is_parametro()
+    match(']')
     match(')')
     match('{')
-    while lookahead() in ['int', 'boolean']:
+    while lookahead() in ['id']:
         var()
     while lookahead() not in ['return']:
         cmd()
@@ -430,19 +365,27 @@ def is_main_de_classe():
     cmd()
     match('}')
     match('}')
+    if lookahead() == 'class':
+        match('class')
+        is_classe()
+    else:
+        print('tudo certo')
+        exit()
 
 # isClasse -> class id [ extends id ] '{' { VAR } { isDeclaracaoMetodo } '}'
 def is_classe():
-    match('class')
-    match('id')
-    if lookahead() == 'extends':
-        match('extends')
+    if lookahead() == 'id':
         match('id')
-    match('{')
-    while lookahead() in ['int', 'boolean']:
+        if lookahead() == 'extends':
+            match('extends')
+            match('id')
+        else:
+            match('{')
+    while lookahead() in ['id']:
         var()
     while lookahead() in ['public']:
         is_declaracao_metodo()
+    match('}')
     match('}')
 
 # pega o token atual da analise sem consumilo
@@ -453,9 +396,6 @@ def lookahead():
         return None
 
 
-
-
 prog()
-# goal()
 # Caso o gramatica esteja correta é printado a confirmação, se não o codigo é interrompido antes
 print('Tudo Certo!')
