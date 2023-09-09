@@ -285,8 +285,11 @@ def cmd():
             match('=')
             exp()
             match(';')
+    elif lookahead() in ['int', 'boolean']:
+        var()
     else:
         print(f"Erro de sintaxe: comando inválido: '{lookahead()}' + {cont}")
+        print(tokens)
         exit()
 
 # VAR -> TIPO id ;
@@ -301,9 +304,8 @@ def is_declaracao_metodo():
     tipo()
     match('id')
     match('(')
-    match('[')
-    is_parametro()
-    match(']')
+    while lookahead() in ['int', 'boolean']:
+        is_parametro()
     match(')')
     match('{')
     while lookahead() in ['id']:
@@ -335,9 +337,6 @@ def tipo():
         match('boolean')
     elif lookahead() == 'id':
         match('id')
-    else:
-        print(f"Erro de sintaxe: esperava 'int' ou 'boolean' ou 'id', encontrou '{lookahead()}'")
-        exit()
 
 # PROG -> isMainDeClasse { isClasse }
 def prog():
@@ -381,7 +380,7 @@ def is_classe():
             match('id')
         else:
             match('{')
-    while lookahead() in ['id']:
+    while lookahead() in ['int', 'boolean']:
         var()
     while lookahead() in ['public']:
         is_declaracao_metodo()
@@ -395,6 +394,8 @@ def lookahead():
     else:
         return None
 
+def teste():
+    return 'entrou'
 
 prog()
 # Caso o gramatica esteja correta é printado a confirmação, se não o codigo é interrompido antes
