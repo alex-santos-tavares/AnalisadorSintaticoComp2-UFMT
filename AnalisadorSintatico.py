@@ -2,7 +2,7 @@
 # Alunos:                                                                   #
 # ALEX SANTOS TAVARES                                                       #
 # PEDRO LUIZ QUANZ DE SANT'ANA BARROS                                       #
-# VITOR HUGO DUARTE DA SILVA                                                #
+# VICTOR HUGO DUARTE DA SILVA                                                #
 # FELIPE CECCONELLO FONTANA                                                 #
 #############################################################################
 
@@ -15,7 +15,7 @@ cont = 1
 try:
     with open('saida.txt') as f:
         for line in f:
-            #print(line)
+            # print(line)
 
             if("'ERRO LEXICO'" in line):
                 print('Erro léxico encontrado')
@@ -111,8 +111,16 @@ except:
 # imprime os tokens em ordem
 print('Lista de tokens -------------------------------------------------------------------------------------\n', tokens, '\n------------------------------------------------------------------------------------------------------')
 
-# dá o match no token, filtra alguns casos de erros
-def match(expected_token):
+def match(expected_token: str, mandatory:bool = True ) -> None:
+    """
+        Função para dar match no token, filtra alguns casos de erros.
+
+        Parametros:
+            expected_token: String com o token a ser analisado
+
+            mandatory: Booleano que verifica se o token é o obrigatório, por padrão sim. Caso não seja, sua ausência não resultará em erro.
+
+    """
     global tokens
     global cont
     if len(tokens) > 0:
@@ -120,9 +128,10 @@ def match(expected_token):
             cont = cont + 1 
             tokens = tokens[1:]
         else:
-            print(f"Erro de sintaxe! esperava '{expected_token }' posicao: {cont} e teve {lookahead()}")
-            print(tokens)
-            exit()
+            if(mandatory):
+                print(f"Erro de sintaxe! esperava '{expected_token }' posicao: {cont} e teve {lookahead()}")
+                print(tokens)
+                exit()
     elif len(tokens) == 0:
         print('Todos tokens analisados!\nSem erros encontrados')
         exit()
@@ -337,7 +346,7 @@ def is_parametro():
 
 # isDeclaracaoMetodo -> public TIPO id '(' [ isParametro ] ')' '{' { VAR } { CMD } return EXP ';' '}'
 def is_declaracao_metodo():
-    match('public')
+    match('public',False)
     tipo()
     match('id')
     match('(')
@@ -356,6 +365,7 @@ def is_declaracao_metodo():
 
 # isClasse -> class id [ extends id ] '{' { VAR } { isDeclaracaoMetodo } '}'
 def is_classe():
+    match('public',False)
     if lookahead() == 'id':
         match('id')
         if lookahead() == 'extends':
@@ -372,6 +382,7 @@ def is_classe():
 
 # isMainDeClasse -> class id '{' public static void main ( String [ ] id ) '{' CMD '}' '}'
 def is_main_de_classe():
+    match('public',False)
     match('class')
     match('id')
     match('{')
