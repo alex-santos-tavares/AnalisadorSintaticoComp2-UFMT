@@ -5,6 +5,9 @@
 # VITOR HUGO DUARTE DA SILVA                                                #
 #############################################################################
 
+import subprocess
+subprocess.run(["a.exe"])
+
 tokens = list()
 cont = 1
 # Ler os tokens referentes a gramatica do arquivo de saida do lex (saida.txt)
@@ -13,8 +16,11 @@ try:
         for line in f:
             #print(line)
 
+            if("'ERRO LEXICO'" in line):
+                print('Erro léxico encontrado')
+                exit()  
             #valores
-            if('Identificador' in line):
+            elif('Identificador' in line):
                 tokens.append('id')
             elif("'numeral'" in line):
                 tokens.append('numInt')
@@ -102,7 +108,7 @@ except:
     exit()
 
 # imprime os tokens em ordem
-print(tokens)
+print('Lista de tokens -------------------------------------------------------------------------------------\n', tokens, '\n------------------------------------------------------------------------------------------------------')
 
 
 
@@ -110,12 +116,16 @@ print(tokens)
 def match(expected_token):
     global tokens
     global cont
-    if tokens and tokens[0] == expected_token:
-        cont = cont + 1 
-        tokens = tokens[1:]
-    else:
-        print(f"Erro de sintaxe! esperava '{expected_token }' posicao: {cont} e teve {lookahead()}")
-        print(tokens)
+    if len(tokens) > 0:
+        if tokens and tokens[0] == expected_token:
+            cont = cont + 1 
+            tokens = tokens[1:]
+        else:
+            print(f"Erro de sintaxe! esperava '{expected_token }' posicao: {cont} e teve {lookahead()}")
+            print(tokens)
+            exit()
+    elif len(tokens) == 0:
+        print('Todos tokens analisados!\nSem erros encontrados')
         exit()
 
 # Especificador de Tipo
@@ -200,7 +210,7 @@ def is_atribuicao():
     elif lookahead() == '-':
         match('-')
         is_atribuicao()
-    elif lookahead() in ['true', 'false', 'num', 'null']:
+    elif lookahead() in ['true', 'false', 'numInt', 'null']:
         match(lookahead())
     else:
         is_instancia_de_classe()
@@ -255,6 +265,10 @@ def cmd():
         match('if')
         match('(')
         exp()
+        if lookahead() == 'numInt':
+            match('numInt')
+        if lookahead() == 'id':
+            match('id')
         match(')')
         cmd()
         if lookahead() == 'else':
@@ -277,6 +291,8 @@ def cmd():
         if lookahead() == '=':
             match('=')
             exp()
+            if lookahead() == 'numInt':
+                match('numInt')
             match(';')
         elif lookahead() == '[':
             match('[')
