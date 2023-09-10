@@ -3,6 +3,7 @@
 # ALEX SANTOS TAVARES                                                       #
 # PEDRO LUIZ QUANZ DE SANT'ANA BARROS                                       #
 # VITOR HUGO DUARTE DA SILVA                                                #
+# FELIPE CECCONELLO FONTANA                                                 #
 #############################################################################
 
 import subprocess
@@ -110,8 +111,6 @@ except:
 # imprime os tokens em ordem
 print('Lista de tokens -------------------------------------------------------------------------------------\n', tokens, '\n------------------------------------------------------------------------------------------------------')
 
-
-
 # dá o match no token, filtra alguns casos de erros
 def match(expected_token):
     global tokens
@@ -128,14 +127,20 @@ def match(expected_token):
         print('Todos tokens analisados!\nSem erros encontrados')
         exit()
 
-# Especificador de Tipo
-def type_specifier():
-    if lookahead() in ['int', 'boolean']:
-        match(lookahead())
+# pega o token atual da analise sem consumilo
+def lookahead():
+    if tokens:
+        return tokens[0]
     else:
-        print(f"Erro de sintaxe: esperava 'int' ou 'boolean', encontrou '{lookahead()}'")
-        exit()
+        return None
+    
 
+# EXPS -> EXP { , EXP }
+def exps():
+    exp()
+    while lookahead() == ',':
+        match(',')
+        exp()
 
 # isInstanciaDeClasse -> id
 #                    | this
@@ -169,21 +174,6 @@ def is_instancia_de_classe():
             is_instancia_de_classe()
 
             
-# EXPS -> EXP { , EXP }
-def exps():
-    exp()
-    if lookahead(','):
-        while lookahead() == ',':
-            match(',')
-            exp()
-    
-
-def is_multiplicacao():
-    is_atribuicao()
-    while lookahead() in ['*']:
-        match('*')
-        is_atribuicao()
-
 # isAtribuicao -> ! isAtribuicao
 #             | - isAtribuicao
 #             | true
@@ -221,13 +211,23 @@ def is_atribuicao():
                 exp()
                 match(']')
 
-# EXP -> EXP && isSubtracao
-#     | isSubtracao
-def exp():
-    is_subtracao()
-    if lookahead() == '&&':
-        match('&&')
-        exp()
+
+# isMultiplicacao -> isMultiplicacao * isAtribuicao
+#                | isAtribuicao
+def is_multiplicacao():
+    is_atribuicao()
+    while lookahead() in ['*']:
+        match('*')
+        is_atribuicao()
+
+# isAdicao -> isAdicao + isMultiplicacao
+#         | isAdicao - isMultiplicacao
+#         | isMultiplicacao
+def is_adicao():
+    is_multiplicacao()
+    while lookahead() in ['+', '-']:
+        match(lookahead())
+        is_multiplicacao()
 
 # isSubtracao -> isSubtracao < isAdicao
 #            | isSubtracao == isAdicao
@@ -239,14 +239,14 @@ def is_subtracao():
         match(lookahead())
         is_adicao()
 
-# isAdicao -> isAdicao + isMultiplicacao
-#         | isAdicao - isMultiplicacao
-#         | isMultiplicacao
-def is_adicao():
-    is_multiplicacao()
-    while lookahead() in ['+', '-']:
-        match(lookahead())
-        is_multiplicacao()
+
+# EXP -> EXP && isSubtracao
+#     | isSubtracao
+def exp():
+    is_subtracao()
+    if lookahead() == '&&':
+        match('&&')
+        exp()
 
 # CMD -> '{' { CMD } '}'
 #     | if '(' EXP ')' CMD
@@ -314,6 +314,27 @@ def var():
     match('id')
     match(';')
 
+# TIPO -> int '[' ']' | boolean | int | id
+def tipo():
+    if lookahead() == 'int':
+        match('int')
+        if lookahead() == '[':
+            match('[')
+            match(']')
+    elif lookahead() == 'boolean':
+        match('boolean')
+    elif lookahead() == 'id':
+        match('id')
+
+# isParametro -> TIPO id { , TIPO id }
+def is_parametro():
+    tipo()
+    match('id')
+    while lookahead() == ',':
+        match(',')
+        tipo()
+        match('id')
+
 # isDeclaracaoMetodo -> public TIPO id '(' [ isParametro ] ')' '{' { VAR } { CMD } return EXP ';' '}'
 def is_declaracao_metodo():
     match('public')
@@ -333,32 +354,20 @@ def is_declaracao_metodo():
     match(';')
     match('}')
 
-# isParametro -> TIPO id { , TIPO id }
-def is_parametro():
-    tipo()
-    match('id')
-    while lookahead() == ',':
-        match(',')
-        tipo()
+# isClasse -> class id [ extends id ] '{' { VAR } { isDeclaracaoMetodo } '}'
+def is_classe():
+    if lookahead() == 'id':
         match('id')
-
-# TIPO -> int '[' ']' | boolean | int | id
-def tipo():
-    if lookahead() == 'int':
-        match('int')
-        if lookahead() == '[':
-            match('[')
-            match(']')
-    elif lookahead() == 'boolean':
-        match('boolean')
-    elif lookahead() == 'id':
-        match('id')
-
-# PROG -> isMainDeClasse { isClasse }
-def prog():
-    is_main_de_classe()
-    match('{')
-    is_classe()
+        if lookahead() == 'extends':
+            match('extends')
+            match('id')
+        else:
+            match('{')
+    while lookahead() in ['int', 'boolean']:
+        var()
+    while lookahead() in ['public']:
+        is_declaracao_metodo()
+    match('}')
     match('}')
 
 # isMainDeClasse -> class id '{' public static void main ( String [ ] id ) '{' CMD '}' '}'
@@ -387,32 +396,16 @@ def is_main_de_classe():
         print('tudo certo')
         exit()
 
-# isClasse -> class id [ extends id ] '{' { VAR } { isDeclaracaoMetodo } '}'
-def is_classe():
-    if lookahead() == 'id':
-        match('id')
-        if lookahead() == 'extends':
-            match('extends')
-            match('id')
-        else:
-            match('{')
-    while lookahead() in ['int', 'boolean']:
-        var()
-    while lookahead() in ['public']:
-        is_declaracao_metodo()
-    match('}')
-    match('}')
 
-# pega o token atual da analise sem consumilo
-def lookahead():
-    if tokens:
-        return tokens[0]
-    else:
-        return None
+# PROG -> isMainDeClasse { isClasse }
+def prog():
+    is_main_de_classe()
+    match('{')
+    is_classe()
+    match('}')
 
 def teste():
     return 'entrou'
 
 prog()
 # Caso o gramatica esteja correta é printado a confirmação, se não o codigo é interrompido antes
-print('Tudo Certo!')
