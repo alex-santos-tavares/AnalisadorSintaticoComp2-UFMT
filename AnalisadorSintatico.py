@@ -2,7 +2,7 @@
 # Alunos:                                                                   #
 # ALEX SANTOS TAVARES                                                       #
 # PEDRO LUIZ QUANZ DE SANT'ANA BARROS                                       #
-# VITOR HUGO DUARTE DA SILVA                                                #
+# VICTOR HUGO DUARTE DA SILVA                                                #
 # FELIPE CECCONELLO FONTANA                                                 #
 #############################################################################
 
@@ -32,7 +32,7 @@ try:
                 tokens.append('-')
             elif('*' in line):
                 tokens.append('*')
-            elif('=' in line):
+            elif("'='" in line):
                 tokens.append('=')
             elif('<' in line):
                 tokens.append('<')
@@ -42,7 +42,7 @@ try:
                 tokens.append('!=')
             elif('&&' in line):
                 tokens.append('&&')
-            elif('!' in line):
+            elif("'!'" in line):
                 tokens.append('!')
             elif('System.out.println' in line):
                 tokens.append('System.out.println')
